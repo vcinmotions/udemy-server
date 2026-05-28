@@ -1,7 +1,19 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { prisma } = require('../config/database');
-const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  generatePasswordResetToken,
+  verifyPasswordResetToken,
+} = require('../config/jwt');
 const { successResponse, errorResponse } = require('../utils/response');
+const { sendEmail } = require('../utils/email');
+
+function passwordVersion(password) {
+  return crypto.createHash('sha256').update(password).digest('hex').slice(0, 16);
+}
 
 // ─── Register Student ─────────────────────────────────────────────────────────
 async function registerStudent(req, res, next) {
@@ -129,6 +141,93 @@ async function logout(req, res, next) {
 }
 
 // ─── Get Me ───────────────────────────────────────────────────────────────────
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, email: true, name: true, password: true, isActive: true },
+    });
+
+    const message =
+      'If an account exists for this email, a password reset link has been sent.';
+
+    if (!user || !user.isActive) {
+      return successResponse(res, { message });
+    }
+
+    const token = generatePasswordResetToken({
+      id: user.id,
+      pwd: passwordVersion(user.password),
+    });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset your password',
+      text: [
+        `Hi ${user.name},`,
+        '',
+        'We received a request to reset your password.',
+        `Open this link to choose a new password: ${resetUrl}`,
+        '',
+        'This link expires in 15 minutes. If you did not request this, you can ignore this email.',
+      ].join('\n'),
+    });
+
+    return successResponse(res, { message });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    let decoded;
+
+    try {
+      decoded = verifyPasswordResetToken(token);
+    } catch (error) {
+      return errorResponse(res, {
+        statusCode: 400,
+        message: 'Password reset link is invalid or expired.',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, password: true, isActive: true },
+    });
+
+    if (!user || !user.isActive || decoded.pwd !== passwordVersion(user.password)) {
+      return errorResponse(res, {
+        statusCode: 400,
+        message: 'Password reset link is invalid or expired.',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      }),
+      prisma.refreshToken.deleteMany({
+        where: { userId: user.id },
+      }),
+    ]);
+
+    return successResponse(res, {
+      message: 'Password updated successfully. Please log in with your new password.',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getMe(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
@@ -145,4 +244,13 @@ async function getMe(req, res, next) {
   }
 }
 
-module.exports = { registerStudent, registerInstructor, login, refreshToken, logout, getMe };
+module.exports = {
+  registerStudent,
+  registerInstructor,
+  login,
+  refreshToken,
+  logout,
+  forgotPassword,
+  resetPassword,
+  getMe,
+};
