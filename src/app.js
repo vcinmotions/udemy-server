@@ -16,6 +16,7 @@ const enrollmentRoutes = require('./routes/enrollment.routes');
 const reviewRoutes = require('./routes/review.routes');
 const categoryRoutes = require('./routes/category.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const publicRoutes = require('./routes/instructor.routes');
 
 const app = express();
 
@@ -25,7 +26,10 @@ app.use(compression());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://udemy-web.vercel.app',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   })
@@ -84,6 +88,7 @@ app.use(`${API_PREFIX}/enrollments`, enrollmentRoutes);
 app.use(`${API_PREFIX}/reviews`, reviewRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
+app.use(`${API_PREFIX}/public`, publicRoutes);
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);

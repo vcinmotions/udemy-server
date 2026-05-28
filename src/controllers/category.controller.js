@@ -6,9 +6,24 @@ async function getAllCategories(req, res, next) {
     const categories = await prisma.category.findMany({
       include: {
         subcategories: true,
-        _count: { select: { courses: true } },
+
+        courses: {
+          include: {
+            instructor: true,
+            subcategory: true,
+          },
+        },
+
+        _count: {
+          select: {
+            courses: true,
+          },
+        },
       },
-      orderBy: { name: 'asc' },
+
+      orderBy: {
+        name: 'asc',
+      },
     });
     return successResponse(res, { data: { categories } });
   } catch (error) {
