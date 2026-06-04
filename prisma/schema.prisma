@@ -344,7 +344,6 @@ model CartItem {
   createdAt DateTime @default(now())
 
   @@id([studentId, courseId])
-
   @@map("cart_items")
 }
 
@@ -356,7 +355,7 @@ model Wishlist {
   id String @id @default(uuid())
 
   studentId String
-  courseId String
+  courseId  String
 
   createdAt DateTime @default(now())
 
@@ -378,7 +377,7 @@ model Certificate {
   certificateNo String @unique
 
   studentId String
-  courseId String
+  courseId  String
 
   pdfUrl String?
 

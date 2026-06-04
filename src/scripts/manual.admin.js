@@ -75,11 +75,11 @@ async function main() {
   if (!existingCourse) {
     const course = await prisma.course.create({
       data: {
-        title: 'Tally Prime',
+        title: 'GST in Tally Prime',
         subtitle: 'Learn Tally Prime from basics to advanced accounting with GST, inventory, and payroll management',
         description: 'Master Tally Prime with practical accounting workflows, GST filing, inventory handling, payroll management, voucher entries, banking, and financial reporting.',
-        image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop',
-        previewVideo: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        image: 'https://res.cloudinary.com/dvy2kjhg0/image/upload/q_auto/f_auto/v1779788731/course-thumbnails/hqod7wiwyxzg6hd6wrp3.jpg',
+        previewVideo: 'https://res.cloudinary.com/dvy2kjhg0/video/upload/q_auto/f_auto/v1779789003/course-previews/rboa4gtq4kfuhieunpiu.mp4',
         price: 0,
         originalPrice: 999,
         language: 'English',
@@ -102,14 +102,8 @@ async function main() {
         subcategoryId: subcategory.id,
         whatYouWillLearn: {
           create: [
-            { text: 'Understand Tally Prime interface and navigation', order: 0 },
-            { text: 'Create companies and manage accounting masters', order: 1 },
-            { text: 'Record sales, purchase, payment, and receipt vouchers', order: 2 },
-            { text: 'Manage GST transactions and taxation reports', order: 3 },
-            { text: 'Handle inventory and stock management', order: 4 },
-            { text: 'Generate balance sheet, P&L, and reports', order: 5 },
-            { text: 'Bank reconciliation and payroll processing', order: 6 },
-            { text: 'Print invoices and financial statements', order: 7 },
+            { text: 'How to Set GST Details in TallyPrime - Tally Learning Hub', order: 0 },
+            { text: 'GST Invoice in Tallys', order: 1 },
           ],
         },
         requirements: {
@@ -126,25 +120,21 @@ async function main() {
           create: [
             {
               title: 'Introduction to Tally Prime',
-              totalDuration: '1h 20m',
+              totalDuration: '7m 13s',
               order: 0,
               lessons: {
                 create: [
-                  { title: 'Welcome to Tally Prime', duration: '5:20', isPreview: true, type: 'video', order: 0 },
-                  { title: 'Installing Tally Prime', duration: '11:45', isPreview: true, type: 'video', order: 1 },
-                  { title: 'Understanding the Dashboard', duration: '14:20', isPreview: false, type: 'video', order: 2 },
+                  { title: 'Welcome to Tally Prime', duration: '7:13', isPreview: true, type: 'video', videoUrl: 'https://res.cloudinary.com/dvy2kjhg0/video/upload/q_auto/f_auto/v1779789560/course-lessons/wyzehgpnbjmvmouvawi8.mp4', order: 0 },
                 ],
               },
             },
             {
               title: 'Accounting Masters',
-              totalDuration: '2h 10m',
+              totalDuration: '12m 27s',
               order: 1,
               lessons: {
                 create: [
-                  { title: 'Creating Company in Tally', duration: '18:30', isPreview: false, type: 'video', order: 0 },
-                  { title: 'Ledger Creation & Management', duration: '22:15', isPreview: false, type: 'video', order: 1 },
-                  { title: 'Group Configuration', duration: '15:45', isPreview: false, type: 'video', order: 2 },
+                  { title: 'GST invoice in Tally Prime', duration: '12:27', isPreview: false, type: 'video', videoUrl: 'https://res.cloudinary.com/dvy2kjhg0/video/upload/q_auto/f_auto/v1779970582/course-lessons/bwjl5vnttrqgiydhnzt6.mp4', order: 0 },
                 ],
               },
             },
