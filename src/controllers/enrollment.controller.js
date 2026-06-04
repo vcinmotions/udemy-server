@@ -161,16 +161,25 @@ async function getLearningCourse(
   next
 ) {
   try {
-    const { slug } = req.params;
+    const { id } = req.params;
+
+    console.log("User:", req.user.id);
+    console.log("Course:", id);
+
+    const allEnrollments = await prisma.enrollment.findMany({
+      where: {
+        studentId: req.user.id
+      }
+    });
+
+    console.log("Enrollments:", allEnrollments);
 
     const enrollment =
       await prisma.enrollment.findFirst({
         where: {
           studentId: req.user.id,
 
-          course: {
-            slug,
-          },
+          courseId: id,
         },
 
         include: {

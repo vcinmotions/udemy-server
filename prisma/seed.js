@@ -76,6 +76,7 @@ async function main() {
     const course = await prisma.course.create({
       data: {
         title: 'GST in Tally Prime',
+        slug: 'tally-prime',
         subtitle: 'Learn Tally Prime from basics to advanced accounting with GST, inventory, and payroll management',
         description: 'Master Tally Prime with practical accounting workflows, GST filing, inventory handling, payroll management, voucher entries, banking, and financial reporting.',
         image: 'https://res.cloudinary.com/dvy2kjhg0/image/upload/q_auto/f_auto/v1779788731/course-thumbnails/hqod7wiwyxzg6hd6wrp3.jpg',

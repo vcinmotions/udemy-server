@@ -11,7 +11,7 @@ router.post('/:courseId', authorize('STUDENT', 'INSTRUCTOR', 'SUPERADMIN'), enro
 router.post('/enrollmentsByPass/:courseId', authorize('STUDENT', 'INSTRUCTOR', 'SUPERADMIN'), enrollCourseBypass);
 router.get('/my', getMyEnrollments);
 
-router.get('/learn/:slug', getLearningCourse);
+router.get('/learn/:id', getLearningCourse);
 
 router.get('/:courseId/check', checkEnrollment);
 router.patch('/:courseId/progress', updateProgress);
