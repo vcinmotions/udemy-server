@@ -337,17 +337,9 @@ model CartItem {
 
   courseId String
 
-  student User @relation(
-    fields: [studentId],
-    references: [id],
-    onDelete: Cascade
-  )
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  course Course @relation(
-    fields: [courseId],
-    references: [id],
-    onDelete: Cascade
-  )
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -361,26 +353,18 @@ model CartItem {
 // ─────────────────────────────────────────────
 
 model Wishlist {
+  id String @id @default(uuid())
+
   studentId String
-
   courseId String
-
-  student User @relation(
-    fields: [studentId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  course Course @relation(
-    fields: [courseId],
-    references: [id],
-    onDelete: Cascade
-  )
 
   createdAt DateTime @default(now())
 
-  @@id([studentId, courseId])
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
   @@map("wishlists")
 }
 
@@ -394,19 +378,17 @@ model Certificate {
   certificateNo String @unique
 
   studentId String
-
   courseId String
 
   pdfUrl String?
 
   issuedAt DateTime @default(now())
 
-  student User @relation(fields: [studentId], references: [id])
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  course Course @relation(fields: [courseId], references: [id])
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, courseId])
-
   @@map("certificates")
 }
 
