@@ -16,6 +16,7 @@ const enrollmentRoutes = require('./routes/enrollment.routes');
 const reviewRoutes = require('./routes/review.routes');
 const categoryRoutes = require('./routes/category.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const certificateRoutes = require('./routes/certificate.routes');
 const publicRoutes = require('./routes/instructor.routes');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:3000',
+      'http://localhost:8081',
       'https://udemy-web.vercel.app',
     ],
     credentials: true,
@@ -88,6 +90,7 @@ app.use(`${API_PREFIX}/enrollments`, enrollmentRoutes);
 app.use(`${API_PREFIX}/reviews`, reviewRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
+app.use(`${API_PREFIX}/certificate`, certificateRoutes);
 app.use(`${API_PREFIX}/public`, publicRoutes);
 
 // ─── Error Handling ───────────────────────────────────────────────────────────

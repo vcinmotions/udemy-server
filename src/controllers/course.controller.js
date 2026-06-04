@@ -111,7 +111,7 @@ async function getAllCourses(req, res, next) {
       }),
     ]);
 
-    console.log("courses in getAllCourses:", courses);
+    console.log("courses in getAllCourses Public:", courses);
 
     return successResponse(res, {
       data: { courses: courses.map((c) => ({ ...c, tags: c.tags.map((ct) => ct.tag.name) })) },

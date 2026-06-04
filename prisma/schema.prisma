@@ -129,6 +129,9 @@ model User {
   // Relations
   instructorCourses Course[]        @relation("InstructorCourses")
   enrollments       Enrollment[]
+  certificates      Certificate[]
+  wishlists         Wishlist[]
+  cartItems         CartItem[]
   orders            Order[]
   reviews           Review[]
   reviewHelpfuls    ReviewHelpful[]
@@ -231,6 +234,9 @@ model Course {
   sections         Section[]
   reviews          Review[]
   enrollments      Enrollment[]
+  certificates     Certificate[]
+  wishlists        Wishlist[]
+  cartItems        CartItem[]
 
   orders Order[]
 
@@ -320,6 +326,88 @@ model Lesson {
   updatedAt DateTime @updatedAt
 
   @@map("lessons")
+}
+
+// ─────────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────────
+
+model CartItem {
+  studentId String
+
+  courseId String
+
+  student User @relation(
+    fields: [studentId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  course Course @relation(
+    fields: [courseId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@id([studentId, courseId])
+
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────────
+// WISHLIST
+// ─────────────────────────────────────────────
+
+model Wishlist {
+  studentId String
+
+  courseId String
+
+  student User @relation(
+    fields: [studentId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  course Course @relation(
+    fields: [courseId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@id([studentId, courseId])
+
+  @@map("wishlists")
+}
+
+// ─────────────────────────────────────────────
+// CERTIFICATES
+// ─────────────────────────────────────────────
+
+model Certificate {
+  id String @id @default(uuid())
+
+  certificateNo String @unique
+
+  studentId String
+
+  courseId String
+
+  pdfUrl String?
+
+  issuedAt DateTime @default(now())
+
+  student User @relation(fields: [studentId], references: [id])
+
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId])
+
+  @@map("certificates")
 }
 
 // ─────────────────────────────────────────────
