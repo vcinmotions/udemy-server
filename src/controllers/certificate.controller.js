@@ -1,6 +1,7 @@
 // controllers/certificate.controller.js
 
-const prisma = require('../config/prisma');
+const { prisma } = require('../config/database');
+const { successResponse, errorResponse } = require('../utils/response');
 const { v4: uuid } = require('uuid');
 
 exports.generateCertificate = async (req, res) => {
