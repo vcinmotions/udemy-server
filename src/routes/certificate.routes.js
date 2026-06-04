@@ -1,12 +1,10 @@
-// routes/certificate.routes.js
-
 const express = require('express');
 const router = express.Router();
 
 const {
-  generateCertificate,
   getMyCertificates,
-  getCertificateById
+  getCertificateById,
+  generateCertificate
 } = require('../controllers/certificate.controller');
 
 const {
