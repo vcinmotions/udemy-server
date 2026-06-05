@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  getAllCourses, getCourseById, createCourse, updateCourse,
+  getAllCourses, getCourseById, createCourse, updateCourse, getAdminCourses,
   deleteCourse, getMyCourses, togglePublish, getProtectedCourseById, getCourseBySlug
 } = require('../controllers/course.controller');
 
 const {
   createSection, updateSection, deleteSection,
-  createLesson, updateLesson, deleteLesson,
+  createLesson, updateLesson, deleteLesson, 
 } = require('../controllers/curriculum.controller');
 
 const { authenticate, authorize, optionalAuth } = require('../middlewares/auth.middleware');
@@ -24,7 +24,8 @@ router.get('/', validateQuery(courseQuerySchema), getAllCourses);
 router.get('/slug/:slug', getCourseBySlug);
 
 // ─── Instructor (must be before /:id) ─────────────
-router.get('/instructor/my-courses', authenticate, authorize('INSTRUCTOR', 'SUPERADMIN'), getMyCourses);
+router.get('/instructor/my-courses', authenticate, authorize('INSTRUCTOR'), getMyCourses);
+router.get('/admin/admin-courses', authenticate, authorize('SUPERADMIN'), getAdminCourses);
 router.get('/instructor/course/:id', authenticate, authorize('INSTRUCTOR', 'SUPERADMIN'), getProtectedCourseById);
 
 // ─── Public (wildcard, must be last) ──────────────
