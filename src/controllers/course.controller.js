@@ -339,19 +339,50 @@ async function deleteCourse(req, res, next) {
 // ─── GET /courses/instructor/my-courses ───────────────────────────────────────
 async function getMyCourses(req, res, next) {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    // const { page = 1, limit = 10 } = req.query;
+    // const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const {
+      page = 1, limit = 10, search = '',
+    } = req.query;
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    const where = {
+      instructorId: req.user.id,
+      isPublished: true,
+      isApproved: true,
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { subtitle: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     const [total, courses] = await Promise.all([
-      prisma.course.count({ where: { instructorId: req.user.id } }),
+      prisma.course.count({ where }),
+
       prisma.course.findMany({
-        where: { instructorId: req.user.id },
+        where,
         include: COURSE_LIST_INCLUDE,
         orderBy: { createdAt: 'desc' },
         skip,
         take: parseInt(limit),
       }),
     ]);
+
+    // const [total, courses] = await Promise.all([
+    //   prisma.course.count({ where: { instructorId: req.user.id } }),
+    //   prisma.course.findMany({
+    //     where: { instructorId: req.user.id },
+    //     include: COURSE_LIST_INCLUDE,
+    //     orderBy: { createdAt: 'desc' },
+    //     skip,
+    //     take: parseInt(limit),
+    //   }),
+    // ]);
 
     console.log("courses in getMyCourses:", courses);
 
