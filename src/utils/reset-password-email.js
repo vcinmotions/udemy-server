@@ -31,7 +31,7 @@ function createMessage({ from, fromName, to, subject, text, html }) {
   return headers.join('\r\n');
 }
 
-async function sendEmail({ to, subject, text, html }) {
+async function sendResetPasswordEmail({ to, subject, text, html }) {
   const config = smtpConfig();
 
   if (!config.host || !config.user || !config.pass || !config.from) {
