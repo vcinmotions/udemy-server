@@ -11,6 +11,7 @@ const {
 const { successResponse, errorResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const { generateOTP } = require('../utils/otp');
+require('dotenv').config();
 
 function passwordVersion(password) {
   return crypto.createHash('sha256').update(password).digest('hex').slice(0, 16);

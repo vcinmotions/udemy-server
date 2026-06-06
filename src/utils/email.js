@@ -1,5 +1,6 @@
 const net = require('net');
 const tls = require('tls');
+const crypto = require('crypto'); // NEW: Required to compile secure structural body boundaries
 
 function smtpConfig() {
   return {
@@ -15,32 +16,43 @@ function encodeAddress(value) {
   return `<${String(value).replace(/[<>]/g, '')}>`;
 }
 
-// function createMessage({ from, to, subject, text }) {
-//   return [
-//     `From: ${from}`,
-//     `To: ${to}`,
-//     `Subject: ${subject}`,
-//     'MIME-Version: 1.0',
-//     'Content-Type: text/plain; charset=utf-8',
-//     '',
-//     text,
-//   ].join('\r\n');
-// }
-
-function createMessage({ from, fromName, to, subject, text }) {
-  return [
-    `From: ${fromName} <${from}>`,
+// MODIFIED: Converted message factory to build out modern multi-part layout formats
+function createMessage({ from, fromName, to, subject, text, html }) {
+  const boundary = `----=_Part_${crypto.randomBytes(8).toString('hex')}`;
+  
+  const headers = [
+    `From: ${fromName || process.env.SMTP_FROM_NAME} <${from}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
     'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
     'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: 7bit',
     '',
     text,
-  ].join('\r\n');
+    '',
+  ];
+
+  // If rich custom layouts exist, map them seamlessly into separate partition nodes
+  if (html) {
+    headers.push(
+      `--${boundary}`,
+      'Content-Type: text/html; charset=utf-8',
+      'Content-Transfer-Encoding: 7bit',
+      '',
+      html,
+      ''
+    );
+  }
+
+  headers.push(`--${boundary}--`);
+  return headers.join('\r\n');
 }
 
 async function sendCommand(socket, command, expectedCodes) {
-  if (command) socket.write(`${command}\r\n`);
+  if (command !== null) socket.write(`${command}\r\n`);
 
   return new Promise((resolve, reject) => {
     let response = '';
@@ -102,11 +114,12 @@ function upgradeToTls(socket, host) {
   });
 }
 
-async function sendEmail({ to, subject, text }) {
+// MODIFIED: Accepts the html parameter payload directly here
+async function sendEmail({ to, subject, text, html }) {
   const config = smtpConfig();
 
   if (!config.host || !config.user || !config.pass || !config.from) {
-    console.log('SMTP is not configured. Password reset email content:');
+    console.log('SMTP is not configured. Terminal print fallback routing trace:');
     console.log(text);
     return;
   }
@@ -131,9 +144,11 @@ async function sendEmail({ to, subject, text }) {
     await sendCommand(socket, `MAIL FROM:${encodeAddress(config.from)}`, [250]);
     await sendCommand(socket, `RCPT TO:${encodeAddress(to)}`, [250, 251]);
     await sendCommand(socket, 'DATA', [354]);
+    
+    // MODIFIED: Mapped HTML down straight to factory constructor layout configurations
     await sendCommand(
       socket,
-      `${createMessage({ from: config.from, fromName: process.env.SMTP_FROM_NAME, to, subject, text })}\r\n.`,
+      `${createMessage({ from: config.from, fromName: process.env.SMTP_FROM_NAME, to, subject, text, html })}\r\n.`,
       [250]
     );
     await sendCommand(socket, 'QUIT', [221]);
