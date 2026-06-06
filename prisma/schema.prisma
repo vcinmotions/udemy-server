@@ -152,6 +152,25 @@ model RefreshToken {
 }
 
 // ─────────────────────────────────────────────
+// EMAIL VERIFICATION OTP
+// ─────────────────────────────────────────────
+
+model EmailVerificationOTP {
+  id String @id @default(uuid())
+
+  email String
+
+  otp String
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("email_verification_otps")
+}
+
+// ─────────────────────────────────────────────
 // CATEGORY
 // ─────────────────────────────────────────────
 
