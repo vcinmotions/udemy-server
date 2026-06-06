@@ -16,6 +16,37 @@ function passwordVersion(password) {
   return crypto.createHash('sha256').update(password).digest('hex').slice(0, 16);
 }
 
+// FIX: Helper function needs explicit declaration handling to ensure it works within the pipeline context
+async function sendVerificationOTP(email, name, otp) {
+  // CRITICAL: Must await this promise execution string so node doesn't dump the thread before dispatching SMTP payload
+  await sendEmail({
+    to: email,
+    subject: '🛡️ Verify your account',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; color: #333333;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: #4F46E5; margin: 0; font-size: 24px;">Account Verification</h2>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Hi ${name},</p>
+        <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Thank you for registering! Please use the verification code below to complete your account setup:</p>
+        <div style="text-align: center; margin: 32px 0;">
+          <span style="display: inline-block; font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1E1B4B; background-color: #EEF2F6; padding: 12px 24px; border-radius: 6px; border: 1px dashed #CBD5E1;">
+            ${otp}
+          </span>
+        </div>
+        <p style="font-size: 14px; color: #EF4444; margin-bottom: 24px; font-weight: 500;">
+          ⏳ This code will expire in 10 minutes.
+        </p>
+        <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #9CA3AF; line-height: 1.5; margin: 0;">
+          If you did not create an account, you can safely ignore this email.
+        </p>
+      </div>
+    `,
+    text: `Hi ${name},\n\nYour verification code is: ${otp}\n\nThis code will expire in 10 minutes.`
+  });
+}
+
 // ─── Register Student ─────────────────────────────────────────────────────────
 async function registerStudent(req, res, next) {
   try {
@@ -131,9 +162,9 @@ async function verifyEmailOTP(req, res, next) {
     const record =
       await prisma.emailVerificationOTP.findFirst({
         where: {
-          email,
-          otp,
-          
+          email: email.toLowerCase().trim(),
+          // FIX: Coerce input safely to a string or integer depending on your schema representation
+          otp: String(otp).trim(),
         },
         orderBy: {
           createdAt: 'desc',
@@ -143,7 +174,7 @@ async function verifyEmailOTP(req, res, next) {
     if (!record) {
       return errorResponse(res, {
         statusCode: 400,
-        message: 'Invalid OTP.',
+        message: 'Invalid or incorrect code..',
       });
     }
 
@@ -353,50 +384,50 @@ async function getMe(req, res, next) {
   }
 }
 
-async function sendVerificationOTP(email, name, otp) {
-  await sendEmail({
-    to: email,
-    subject: '🛡️ Verify your account',
-    // HTML version for modern email clients
-    html: `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; color: #333333;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h2 style="color: #4F46E5; margin: 0; font-size: 24px;">Account Verification</h2>
-        </div>
+// async function sendVerificationOTP(email, name, otp) {
+//   await sendEmail({
+//     to: email,
+//     subject: '🛡️ Verify your account',
+//     // HTML version for modern email clients
+//     html: `
+//       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; color: #333333;">
+//         <div style="text-align: center; margin-bottom: 24px;">
+//           <h2 style="color: #4F46E5; margin: 0; font-size: 24px;">Account Verification</h2>
+//         </div>
         
-        <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Hi ${name},</p>
+//         <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Hi ${name},</p>
         
-        <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Thank you for registering! Please use the verification code below to complete your account setup:</p>
+//         <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Thank you for registering! Please use the verification code below to complete your account setup:</p>
         
-        <div style="text-align: center; margin: 32px 0;">
-          <span style="display: inline-block; font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1E1B4B; background-color: #EEF2F6; padding: 12px 24px; border-radius: 6px; border: 1px dashed #CBD5E1;">
-            ${otp}
-          </span>
-        </div>
+//         <div style="text-align: center; margin: 32px 0;">
+//           <span style="display: inline-block; font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1E1B4B; background-color: #EEF2F6; padding: 12px 24px; border-radius: 6px; border: 1px dashed #CBD5E1;">
+//             ${otp}
+//           </span>
+//         </div>
         
-        <p style="font-size: 14px; color: #EF4444; margin-bottom: 24px; font-weight: 500;">
-          ⏳ This code will expire in 10 minutes.
-        </p>
+//         <p style="font-size: 14px; color: #EF4444; margin-bottom: 24px; font-weight: 500;">
+//           ⏳ This code will expire in 10 minutes.
+//         </p>
         
-        <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
+//         <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
         
-        <p style="font-size: 12px; color: #9CA3AF; line-height: 1.5; margin: 0;">
-          If you did not create an account, you can safely ignore this email. Someone may have typed your email address by mistake.
-        </p>
-      </div>
-    `,
-    // Fallback plain text version
-    text: `
-    Hi ${name},
+//         <p style="font-size: 12px; color: #9CA3AF; line-height: 1.5; margin: 0;">
+//           If you did not create an account, you can safely ignore this email. Someone may have typed your email address by mistake.
+//         </p>
+//       </div>
+//     `,
+//     // Fallback plain text version
+//     text: `
+//     Hi ${name},
 
-    Thank you for registering! Your verification code is: ${otp}
+//     Thank you for registering! Your verification code is: ${otp}
 
-    This code will expire in 10 minutes.
+//     This code will expire in 10 minutes.
 
-    If you did not create an account, please ignore this email.
-        `,
-      });
-    }
+//     If you did not create an account, please ignore this email.
+//         `,
+//       });
+//     }
 
 async function resendOTP(req, res, next) {
   try {
