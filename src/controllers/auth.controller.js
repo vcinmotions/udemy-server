@@ -47,6 +47,114 @@ async function sendVerificationOTP(email, name, otp) {
   });
 }
 
+// // ─── Register Student ─────────────────────────────────────────────────────────
+// async function registerStudent(req, res, next) {
+//   try {
+//     const { name, email, password } = req.body;
+//     const existing = await prisma.user.findUnique({ where: { email } });
+//     if (existing) return errorResponse(res, { statusCode: 409, message: 'Email already registered.' });
+
+//     const hashedPassword = await bcrypt.hash(password, 12);
+
+//     const otp = generateOTP();
+
+//     const user = await prisma.user.create({
+//       data: { name, email, password: hashedPassword, role: 'STUDENT' , emailVerified: false},
+//       select: { id: true, name: true, email: true, role: true, createdAt: true },
+//     });
+
+//     await prisma.emailVerificationOTP.deleteMany({
+//       where: { email },
+//     });
+
+//     await prisma.emailVerificationOTP.create({
+//       data: {
+//         email,
+//         otp,
+//         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+//       },
+//     });
+
+//     await sendVerificationOTP(
+//       user.email,
+//       user.name,
+//       otp
+//     );
+
+//     // const accessToken = generateAccessToken({ id: user.id, role: user.role });
+//     // const refreshToken = generateRefreshToken({ id: user.id });
+//     // await prisma.refreshToken.create({
+//     //   data: { token: refreshToken, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+//     // });
+
+//     return successResponse(res, {
+//       statusCode: 201,
+//       // message: 'Student account created successfully, verification code sent to email.',
+//       // data: { user, accessToken, refreshToken },
+//       message: 'Verification code sent to your email.',
+//       data: {
+//         email: user.email,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
+// // ─── Register Instructor ──────────────────────────────────────────────────────
+// async function registerInstructor(req, res, next) {
+//   try {
+//     const { name, email, password, headline, bio } = req.body;
+//     const existing = await prisma.user.findUnique({ where: { email } });
+//     if (existing) return errorResponse(res, { statusCode: 409, message: 'Email already registered.' });
+
+//     const hashedPassword = await bcrypt.hash(password, 12);
+
+//     const otp = generateOTP();
+
+//     const user = await prisma.user.create({
+//       data: { name, email, password: hashedPassword, role: 'INSTRUCTOR', headline: headline || null, bio: bio || null, emailVerified: false },
+//       select: { id: true, name: true, email: true, role: true, headline: true, createdAt: true },
+//     });
+
+//     await prisma.emailVerificationOTP.deleteMany({
+//       where: { email },
+//     });
+
+//     await prisma.emailVerificationOTP.create({
+//       data: {
+//         email,
+//         otp,
+//         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+//       },
+//     });
+
+//     await sendVerificationOTP(
+//       user.email,
+//       user.name,
+//       otp
+//     );
+
+//     // const accessToken = generateAccessToken({ id: user.id, role: user.role });
+//     // const refreshToken = generateRefreshToken({ id: user.id });
+//     // await prisma.refreshToken.create({
+//     //   data: { token: refreshToken, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+//     // });
+
+//     return successResponse(res, {
+//       statusCode: 201,
+//       // message: 'Instructor account created. Pending admin approval.',
+//       // data: { user, accessToken, refreshToken },
+//       message: 'Verification code sent to your email.',
+//       data: {
+//         email: user.email,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
 // ─── Register Student ─────────────────────────────────────────────────────────
 async function registerStudent(req, res, next) {
   try {
@@ -55,7 +163,6 @@ async function registerStudent(req, res, next) {
     if (existing) return errorResponse(res, { statusCode: 409, message: 'Email already registered.' });
 
     const hashedPassword = await bcrypt.hash(password, 12);
-
     const otp = generateOTP();
 
     const user = await prisma.user.create({
@@ -75,22 +182,14 @@ async function registerStudent(req, res, next) {
       },
     });
 
-    await sendVerificationOTP(
-      user.email,
-      user.name,
-      otp
-    );
+    // MODIFIED: Fire-and-forget execution block. Removed 'await' so the server returns 201 instantly
+    sendVerificationOTP(user.email, user.name, otp).catch((mailError) => {
+      console.error('❌ BACKGROUND EMAIL DISPATCH FAIL:', mailError);
+    });
 
-    // const accessToken = generateAccessToken({ id: user.id, role: user.role });
-    // const refreshToken = generateRefreshToken({ id: user.id });
-    // await prisma.refreshToken.create({
-    //   data: { token: refreshToken, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-    // });
-
+    // This block executes instantly now, giving your React Native frontend its navigation redirect hooks
     return successResponse(res, {
       statusCode: 201,
-      // message: 'Student account created successfully, verification code sent to email.',
-      // data: { user, accessToken, refreshToken },
       message: 'Verification code sent to your email.',
       data: {
         email: user.email,
@@ -109,7 +208,6 @@ async function registerInstructor(req, res, next) {
     if (existing) return errorResponse(res, { statusCode: 409, message: 'Email already registered.' });
 
     const hashedPassword = await bcrypt.hash(password, 12);
-
     const otp = generateOTP();
 
     const user = await prisma.user.create({
@@ -129,22 +227,13 @@ async function registerInstructor(req, res, next) {
       },
     });
 
-    await sendVerificationOTP(
-      user.email,
-      user.name,
-      otp
-    );
-
-    // const accessToken = generateAccessToken({ id: user.id, role: user.role });
-    // const refreshToken = generateRefreshToken({ id: user.id });
-    // await prisma.refreshToken.create({
-    //   data: { token: refreshToken, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-    // });
+    // MODIFIED: Removed 'await' here as well to isolate potential connection blockages
+    sendVerificationOTP(user.email, user.name, otp).catch((mailError) => {
+      console.error('❌ BACKGROUND EMAIL DISPATCH FAIL:', mailError);
+    });
 
     return successResponse(res, {
       statusCode: 201,
-      // message: 'Instructor account created. Pending admin approval.',
-      // data: { user, accessToken, refreshToken },
       message: 'Verification code sent to your email.',
       data: {
         email: user.email,
