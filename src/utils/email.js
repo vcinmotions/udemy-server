@@ -15,9 +15,21 @@ function encodeAddress(value) {
   return `<${String(value).replace(/[<>]/g, '')}>`;
 }
 
-function createMessage({ from, to, subject, text }) {
+// function createMessage({ from, to, subject, text }) {
+//   return [
+//     `From: ${from}`,
+//     `To: ${to}`,
+//     `Subject: ${subject}`,
+//     'MIME-Version: 1.0',
+//     'Content-Type: text/plain; charset=utf-8',
+//     '',
+//     text,
+//   ].join('\r\n');
+// }
+
+function createMessage({ from, fromName, to, subject, text }) {
   return [
-    `From: ${from}`,
+    `From: ${fromName} <${from}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
     'MIME-Version: 1.0',
@@ -121,7 +133,7 @@ async function sendEmail({ to, subject, text }) {
     await sendCommand(socket, 'DATA', [354]);
     await sendCommand(
       socket,
-      `${createMessage({ from: config.from, to, subject, text })}\r\n.`,
+      `${createMessage({ from: config.from, fromName: process.env.SMTP_FROM_NAME, to, subject, text })}\r\n.`,
       [250]
     );
     await sendCommand(socket, 'QUIT', [221]);

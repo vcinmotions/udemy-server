@@ -370,6 +370,48 @@ async function logout(req, res, next) {
 }
 
 // ─── Get Me ───────────────────────────────────────────────────────────────────
+// async function forgotPassword(req, res, next) {
+//   try {
+//     const { email } = req.body;
+//     const normalizedEmail = email.toLowerCase().trim();
+//     const user = await prisma.user.findUnique({
+//       where: { email: normalizedEmail },
+//       select: { id: true, email: true, name: true, password: true, isActive: true },
+//     });
+
+//     const message =
+//       'If an account exists for this email, a password reset link has been sent.';
+
+//     if (!user || !user.isActive) {
+//       return successResponse(res, { message });
+//     }
+
+//     const token = generatePasswordResetToken({
+//       id: user.id,
+//       pwd: passwordVersion(user.password),
+//     });
+//     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+//     const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+
+//     await sendEmail({
+//       to: user.email,
+//       subject: 'Reset your password',
+//       text: [
+//         `Hi ${user.name},`,
+//         '',
+//         'We received a request to reset your password.',
+//         `Open this link to choose a new password: ${resetUrl}`,
+//         '',
+//         'This link expires in 15 minutes. If you did not request this, you can ignore this email.',
+//       ].join('\n'),
+//     });
+
+//     return successResponse(res, { message });
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
 async function forgotPassword(req, res, next) {
   try {
     const { email } = req.body;
@@ -379,9 +421,9 @@ async function forgotPassword(req, res, next) {
       select: { id: true, email: true, name: true, password: true, isActive: true },
     });
 
-    const message =
-      'If an account exists for this email, a password reset link has been sent.';
+    const message = 'If an account exists for this email, a password reset link has been sent.';
 
+    // Safe return fallback to prevent account harvesting vectors
     if (!user || !user.isActive) {
       return successResponse(res, { message });
     }
@@ -390,20 +432,35 @@ async function forgotPassword(req, res, next) {
       id: user.id,
       pwd: passwordVersion(user.password),
     });
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
 
-    await sendEmail({
+    // CRITICAL: Configure this protocol hook string to register your app's custom deep linking scheme
+    // Example: 'smartskills://reset-password?token=...' links straight into your Expo/Native engine runtime
+    const schemeUrl = process.env.DEEP_LINK_SCHEME || 'smartskillsindia://reset-password';
+    const resetUrl = `${schemeUrl}?token=${encodeURIComponent(token)}`;
+
+    // Fire background task safely without blocking thread execution loops
+    sendEmail({
       to: user.email,
-      subject: 'Reset your password',
-      text: [
-        `Hi ${user.name},`,
-        '',
-        'We received a request to reset your password.',
-        `Open this link to choose a new password: ${resetUrl}`,
-        '',
-        'This link expires in 15 minutes. If you did not request this, you can ignore this email.',
-      ].join('\n'),
+      subject: '🔒 Reset your password',
+      text: `Hi ${user.name},\n\nWe received a request to reset your password. Use this link to choose a new password:\n\n${resetUrl}\n\nThis link expires in 15 minutes. If you did not request this, ignore this email.`,
+      // Enriched HTML email framework layout injection node matching your exact component design guides
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; color: #333333;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #4F46E5; margin: 0; font-size: 24px;">Password Reset Request</h2>
+          </div>
+          <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">Hi ${user.name},</p>
+          <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">We received a request to reset your account security configurations. Tap the button below to specify a fresh password credential route:</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetUrl}" style="display: inline-block; background-color: #4F46E5; color: #FFFFFF; text-decoration: none; padding: 12px 28px; font-weight: bold; border-radius: 6px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">Reset My Password</a>
+          </div>
+          <p style="font-size: 12px; color: #EF4444; font-weight: 500;">⏳ This secure recovery window will automatically expire in 15 minutes.</p>
+          <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
+          <p style="font-size: 12px; color: #9CA3AF; line-height: 1.5; margin: 0;">If you did not initiate this transaction pipeline request, you can safely ignore this automated message transmission block layer.</p>
+        </div>
+      `
+    }).catch((mailError) => {
+      console.error('❌ FORGOT PASSWORD BACKGROUND EMAIL SYSTEM REJECTION:', mailError);
     });
 
     return successResponse(res, { message });
