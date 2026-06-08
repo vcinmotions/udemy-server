@@ -1,6 +1,7 @@
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto'); // NEW: Required to compile secure structural body boundaries
+require('dotenv').config();
 
 function smtpConfig() {
   return {

@@ -54,7 +54,7 @@ async function createReview(req, res, next) {
   }
 }
 
-// GET /reviews/:courseId
+// GET /reviews/course/:courseId
 async function getCourseReviews(req, res, next) {
   try {
     const { courseId } = req.params;

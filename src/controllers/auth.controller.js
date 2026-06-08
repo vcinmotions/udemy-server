@@ -183,6 +183,9 @@ async function registerStudent(req, res, next) {
       },
     });
 
+    console.log('OTP:', otp);
+    console.log('User:', user);
+
     // MODIFIED: Fire-and-forget execution block. Removed 'await' so the server returns 201 instantly
     sendVerificationOTP(user.email, user.name, otp).catch((mailError) => {
       console.error('❌ BACKGROUND EMAIL DISPATCH FAIL:', mailError);
