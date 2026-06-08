@@ -119,6 +119,8 @@ function upgradeToTls(socket, host) {
 async function sendEmail({ to, subject, text, html }) {
   const config = smtpConfig();
 
+  console.log('EMAIL CONFIG:', config); // 👈 PUT IT HERE
+
   if (!config.host || !config.user || !config.pass || !config.from) {
     console.log('SMTP is not configured. Terminal print fallback routing trace:');
     console.log(text);
