@@ -73,6 +73,8 @@ async function sendCommand(socket, command, expectedCodes) {
       const lines = response.trimEnd().split(/\r?\n/);
       const last = lines[lines.length - 1];
 
+      console.log('SMTP RAW RESPONSE:', last); // 👈 ADD THIS
+
       if (!/^\d{3} /.test(last)) return;
 
       const code = Number(last.slice(0, 3));
@@ -131,7 +133,9 @@ async function sendEmail({ to, subject, text, html }) {
 
   try {
     await sendCommand(socket, null, [220]);
+    console.log('CONNECTED OK');
     await sendCommand(socket, `EHLO ${config.host}`, [250]);
+    console.log('EHLO OK');
 
     if (config.port !== 465) {
       await sendCommand(socket, 'STARTTLS', [220]);
