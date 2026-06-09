@@ -108,7 +108,7 @@ async function generateCertificate(req, res, next) {
       });
     }
 
-    if (enrollment.progress < 100) {
+    if ((enrollment.progress || 0) < 100) {
       return errorResponse(res, {
         statusCode: 400,
         message: 'Course must be completed before generating certificate.'

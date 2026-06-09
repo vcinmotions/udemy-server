@@ -444,7 +444,7 @@ async function forgotPassword(req, res, next) {
     const resetUrl = `${schemeUrl}?token=${encodeURIComponent(token)}`;
 
     // Fire background task safely without blocking thread execution loops
-    sendResetPasswordEmail({
+    sendEmail({
       to: user.email,
       subject: '🔒 Reset your password',
       text: `Hi ${user.name},\n\nWe received a request to reset your password. Use this link to choose a new password:\n\n${resetUrl}\n\nThis link expires in 15 minutes. If you did not request this, ignore this email.`,

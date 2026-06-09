@@ -91,6 +91,8 @@ app.use(`${API_PREFIX}/reviews`, reviewRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 app.use(`${API_PREFIX}/public`, publicRoutes);
+app.use(`${API_PREFIX}/certificates`, certificateRoutes);
+
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);
