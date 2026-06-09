@@ -9,8 +9,9 @@ const {
   verifyPasswordResetToken,
 } = require('../config/jwt');
 const { successResponse, errorResponse } = require('../utils/response');
-const { sendEmail } = require('../utils/email');
+
 const { generateOTP } = require('../utils/otp');
+const { sendEmail } = require('../utils/email');
 require('dotenv').config();
 
 function passwordVersion(password) {
