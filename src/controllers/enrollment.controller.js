@@ -255,6 +255,7 @@ async function submitQuizAttempt(req, res, next) {
       // const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
       
       const selectedOptionId = answers[question.id];
+      const correctOptions = question.options.filter(o => o.isCorrect);
 
       const isCorrect = correctOptions.some(
         opt => opt.id === selectedOptionId
