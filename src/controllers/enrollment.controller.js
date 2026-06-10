@@ -201,8 +201,18 @@ async function getLearningCourse(
                         where: {
                           studentId: req.user.id,
                         },
+                      },
+                      quiz: {
+                        include: {
+                          questions: {
+                            include: {
+                              options: true,
+                            },
+                          },
+                        },
+                        assignment: true,
                       }
-                    }
+                    },
                   },
                 },
 
