@@ -241,29 +241,30 @@ async function submitQuizAttempt(req, res, next) {
     for (const question of quiz.questions) {
       totalPointsAllocated += question.points;
       
-      const studentSelectedText = answers[question.id];
-      const correctOptions = question.options.filter(o => o.isCorrect);
+      // const studentSelectedText = answers[question.id];
+      // const correctOptions = question.options.filter(o => o.isCorrect);
       
-      // Determine if text string coordinates align with known answers
-      const isCorrect = correctOptions.some(opt => opt.text === studentSelectedText);
+      // // Determine if text string coordinates align with known answers
+      // const isCorrect = correctOptions.some(opt => opt.text === studentSelectedText);
       
-      if (isCorrect) {
-        studentPointsEarned += question.points;
-      }
+      // if (isCorrect) {
+      //   studentPointsEarned += question.points;
+      // }
 
-      console.log("Student Answer:", studentSelectedText);
+      // // Map matching option IDs if present to fit schema footprint
+      // const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
+      
+      const selectedOptionId = answers[question.id];
 
-      console.log(
-        "Correct Options:",
-        correctOptions.map(o => ({
-          id: o.id,
-          text: o.text
-        }))
+      const isCorrect = correctOptions.some(
+        opt => opt.id === selectedOptionId
       );
 
-      // Map matching option IDs if present to fit schema footprint
-      const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
-
+      const selectedOptionMatch =
+        question.options.find(
+          opt => opt.id === selectedOptionId
+        );
+        
       recordsToCreate.push({
         questionId: question.id,
         questionText: question.question,
