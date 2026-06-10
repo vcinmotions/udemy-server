@@ -239,32 +239,51 @@ async function submitQuizAttempt(req, res, next) {
 
     // 2. Loop evaluate parameters against truth state values
     for (const question of quiz.questions) {
-      totalPointsAllocated += question.points;
-      
-      // const studentSelectedText = answers[question.id];
-      // const correctOptions = question.options.filter(o => o.isCorrect);
-      
-      // // Determine if text string coordinates align with known answers
-      // const isCorrect = correctOptions.some(opt => opt.text === studentSelectedText);
-      
-      // if (isCorrect) {
-      //   studentPointsEarned += question.points;
-      // }
+      console.log("QUESTION:", question.question);
 
-      // // Map matching option IDs if present to fit schema footprint
-      // const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
-      
-      const selectedOptionId = answers[question.id];
-      const correctOptions = question.options.filter(o => o.isCorrect);
-
-      const isCorrect = correctOptions.some(
-        opt => opt.id === selectedOptionId
+      console.log(
+        "CORRECT OPTIONS:",
+        question.options
+          .filter(o => o.isCorrect)
+          .map(o => ({
+            id: o.id,
+            text: o.text
+          }))
       );
 
-      const selectedOptionMatch =
-        question.options.find(
-          opt => opt.id === selectedOptionId
-        );
+      console.log(
+        "STUDENT ANSWER:",
+        answers[question.id]
+      );
+    }
+
+    for (const question of quiz.questions) {
+      totalPointsAllocated += question.points;
+      
+      const studentSelectedText = answers[question.id];
+      const correctOptions = question.options.filter(o => o.isCorrect);
+      
+      // Determine if text string coordinates align with known answers
+      const isCorrect = correctOptions.some(opt => opt.id === studentSelectedText);
+      
+      if (isCorrect) {
+        studentPointsEarned += question.points;
+      }
+
+      // Map matching option IDs if present to fit schema footprint
+      const selectedOptionMatch = question.options.find(opt => opt.id === studentSelectedText);
+      
+      // const selectedOptionId = answers[question.id];
+      // const correctOptions = question.options.filter(o => o.isCorrect);
+
+      // const isCorrect = correctOptions.some(
+      //   opt => opt.id === selectedOptionId
+      // );
+
+      // const selectedOptionMatch =
+      //   question.options.find(
+      //     opt => opt.id === selectedOptionId
+      //   );
         
       recordsToCreate.push({
         questionId: question.id,
