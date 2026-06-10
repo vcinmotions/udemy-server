@@ -69,6 +69,41 @@ function shapeCourse(course) {
   };
 }
 
+// ─── Helper: shape course for response ───────────────────────────────────────
+function protectedShapeCourse(course) {
+  return {
+    ...course,
+    whatYouWillLearn: course.whatYouWillLearn?.map((w) => w.text) ?? [],
+    requirements: course.requirements?.map((r) => r.text) ?? [],
+    tags: course.tags?.map((ct) => ct.tag.name) ?? [],
+    curriculum: course.sections?.map((sec) => ({
+      id: sec.id,
+      title: sec.title,
+      totalDuration: sec.totalDuration,
+      order: sec.order,
+      lessons: sec.lessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        duration: l.duration,
+        isPreview: l.isPreview,
+        type: l.type,
+        videoUrl: l.videoUrl,
+        order: l.order,
+      })),
+    })) ?? [],
+    reviews: course.reviews?.map((r) => ({
+      id: r.id,
+      author: r.author.name,
+      avatar: r.author.avatar,
+      rating: r.rating,
+      date: r.date,
+      content: r.content,
+      helpful: r.helpful,
+    })) ?? [],
+    sections: undefined,
+  };
+}
+
 // ─── GET /courses (Public) ────────────────────────────────────────────────────
 async function getAllCourses(req, res, next) {
   try {
@@ -475,7 +510,7 @@ async function getProtectedCourseById(req, res, next) {
       JSON.stringify(course.sections[0].lessons, null, 2)
     );
 
-    const shaped = shapeCourse(course);
+    const shaped = protectedShapeCourse(course);
 
     console.log(
       'SHAPED LESSONS:',
