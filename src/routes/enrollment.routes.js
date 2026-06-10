@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { enrollCourse, getMyEnrollments, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse } = require('../controllers/enrollment.controller');
+const { enrollCourse, getMyEnrollments, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse, markLessonComplete } = require('../controllers/enrollment.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 // All enrollment routes require login

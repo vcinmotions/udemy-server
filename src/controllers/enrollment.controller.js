@@ -370,4 +370,4 @@ async function checkEnrollment(req, res, next) {
   }
 }
 
-module.exports = { enrollCourse, getMyEnrollments, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };
+module.exports = { enrollCourse, getMyEnrollments, markLessonComplete, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };
