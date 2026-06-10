@@ -207,6 +207,8 @@ async function submitQuizAttempt(req, res, next) {
     const { answers, lessonId } = req.body; // answers is an object mapping: { [questionId]: optionText }
     const studentId = req.user.id;
 
+    console.log("Answers for the Quizz:", answers)
+
     // 1. Fetch Quiz along with structural solution metrics
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
