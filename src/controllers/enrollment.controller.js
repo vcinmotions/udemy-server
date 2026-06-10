@@ -196,9 +196,13 @@ async function getLearningCourse(
               sections: {
                 include: {
                   lessons: {
-                    orderBy: {
-                      order: 'asc',
-                    },
+                    include: {
+                      progress : {
+                        where: {
+                          studentId: req.user.id,
+                        },
+                      }
+                    }
                   },
                 },
 
@@ -253,6 +257,99 @@ async function updateProgress(req, res, next) {
     });
 
     return successResponse(res, { message: 'Progress updated.', data: { enrollment: updated } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// PATCH /enrollments/lesson/:lessonId/complete
+async function markLessonComplete(req, res, next) {
+  try {
+    const { lessonId } = req.params;
+
+    const lesson = await prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: {
+        section: {
+          include: {
+            course: true,
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      return errorResponse(res, {
+        statusCode: 404,
+        message: 'Lesson not found',
+      });
+    }
+
+    await prisma.lessonProgress.upsert({
+      where: {
+        studentId_lessonId: {
+          studentId: req.user.id,
+          lessonId,
+        },
+      },
+      update: {
+        completed: true,
+        completedAt: new Date(),
+      },
+      create: {
+        studentId: req.user.id,
+        lessonId,
+        completed: true,
+        completedAt: new Date(),
+      },
+    });
+
+    const courseId = lesson.section.courseId;
+
+    const totalLessons = await prisma.lesson.count({
+      where: {
+        section: {
+          courseId,
+        },
+      },
+    });
+
+    const completedLessons = await prisma.lessonProgress.count({
+      where: {
+        studentId: req.user.id,
+        completed: true,
+        lesson: {
+          section: {
+            courseId,
+          },
+        },
+      },
+    });
+
+    const progress = Math.round(
+      (completedLessons / totalLessons) * 100
+    );
+
+    const enrollment = await prisma.enrollment.update({
+      where: {
+        studentId_courseId: {
+          studentId: req.user.id,
+          courseId,
+        },
+      },
+      data: {
+        progress,
+        completedAt: progress === 100 ? new Date() : null,
+      },
+    });
+
+    return successResponse(res, {
+      message: 'Lesson completed',
+      data: {
+        progress,
+        enrollment,
+      },
+    });
   } catch (error) {
     next(error);
   }

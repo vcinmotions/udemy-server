@@ -35,6 +35,19 @@ enum LessonType {
   video
   article
   quiz
+  assignment
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVIEWED
+  GRADED
 }
 
 // ─────────────────────────────────────────────
@@ -127,15 +140,26 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  instructorCourses Course[]        @relation("InstructorCourses")
+  instructorCourses Course[]      @relation("InstructorCourses")
   enrollments       Enrollment[]
   certificates      Certificate[]
-  wishlists         Wishlist[]
-  cartItems         CartItem[]
-  orders            Order[]
-  reviews           Review[]
-  reviewHelpfuls    ReviewHelpful[]
-  refreshTokens     RefreshToken[]
+
+  quizAttempts QuizAttempt[]
+
+  assignmentSubmissions AssignmentSubmission[]
+
+  generatedQuizzes GeneratedQuiz[]
+
+  generatedAssignments GeneratedAssignment[]
+
+  lessonProgress LessonProgress[]
+
+  wishlists      Wishlist[]
+  cartItems      CartItem[]
+  orders         Order[]
+  reviews        Review[]
+  reviewHelpfuls ReviewHelpful[]
+  refreshTokens  RefreshToken[]
 
   @@map("users")
 }
@@ -341,10 +365,251 @@ model Lesson {
   sectionId String
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
+  progress LessonProgress[]
+
+  // NEW
+  quiz       Quiz?
+  assignment Assignment?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("lessons")
+}
+
+model LessonProgress {
+  id String @id @default(uuid())
+
+  studentId String
+  lessonId  String
+
+  completed Boolean @default(false)
+
+  watchedSeconds Int @default(0)
+
+  completedAt DateTime?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId])
+  @@map("lesson_progress")
+}
+
+// ─────────────────────────────────────────────
+// QUIZ
+// ─────────────────────────────────────────────
+
+model Quiz {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  passingScore Int @default(70)
+
+  timeLimit   Int?
+  maxAttempts Int? // null = unlimited
+
+  lessonId String @unique
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id String @id @default(uuid())
+
+  question String
+
+  type QuestionType @default(SINGLE_CHOICE)
+
+  points Int @default(1)
+
+  order Int @default(0)
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  options QuizOption[]
+
+  answers QuizAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id String @id @default(uuid())
+
+  text String
+
+  isCorrect Boolean @default(false)
+
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id String @id @default(uuid())
+
+  score Float @default(0)
+
+  passed Boolean @default(false)
+
+  startedAt DateTime @default(now())
+
+  completedAt DateTime?
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  answers    QuizAnswer[]
+  percentage Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([quizId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id String @id @default(uuid())
+
+  attemptId String
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId   String
+  questionText String
+  question     QuizQuestion @relation(fields: [questionId], references: [id])
+
+  selectedOptionIds Json?
+
+  isCorrect Boolean
+
+  createdAt DateTime @default(now())
+
+  @@map("quiz_answers")
+}
+
+// ─────────────────────────────────────────────
+// ASSIGNMENT
+// ─────────────────────────────────────────────
+
+model Assignment {
+  id String @id @default(uuid())
+
+  title String
+
+  description String
+
+  instructions String?
+
+  maxMarks Int @default(100)
+
+  dueDate DateTime?
+
+  lessonId String @unique
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  submissions AssignmentSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id String @id @default(uuid())
+
+  answerText String?
+
+  files Json?
+
+  marks Int?
+
+  feedback String?
+
+  status SubmissionStatus @default(SUBMITTED)
+
+  submittedAt DateTime @default(now())
+
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+  @@map("assignment_submissions")
+}
+
+// ─────────────────────────────────────────────
+// AI QUIZ
+// ─────────────────────────────────────────────
+
+model GeneratedQuiz {
+  id String @id @default(uuid())
+
+  topic String
+
+  prompt String
+
+  generatedJson Json
+
+  difficulty    String?
+  questionCount Int?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("generated_quizzes")
+}
+
+// ─────────────────────────────────────────────
+// AI ASSIGNMENT
+// ─────────────────────────────────────────────
+
+model GeneratedAssignment {
+  id String @id @default(uuid())
+
+  topic String
+
+  prompt String
+
+  generatedJson Json
+
+  difficulty    String?
+  questionCount Int?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("generated_assignments")
 }
 
 // ─────────────────────────────────────────────

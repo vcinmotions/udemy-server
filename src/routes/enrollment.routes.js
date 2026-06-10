@@ -16,4 +16,6 @@ router.get('/learn/:id', getLearningCourse);
 router.get('/:courseId/check', checkEnrollment);
 router.patch('/:courseId/progress', updateProgress);
 
+router.patch('/lesson/:lessonId/complete', markLessonComplete);
+
 module.exports = router;
