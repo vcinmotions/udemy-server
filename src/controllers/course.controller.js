@@ -521,7 +521,7 @@ async function getProtectedCourseById(req, res, next) {
       )
     );
 
-    return successResponse(res, { data: { course: shapeCourse(course) } });
+    return successResponse(res, { data: { course: protectedShapeCourse(course) } });
   } catch (error) {
     next(error);
   }
