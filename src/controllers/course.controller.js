@@ -471,6 +471,10 @@ async function getProtectedCourseById(req, res, next) {
 
     console.log("Course getCourseById:", course);
 
+    console.log(
+      JSON.stringify(course.sections[0].lessons, null, 2)
+    );
+
     return successResponse(res, { data: { course: shapeCourse(course) } });
   } catch (error) {
     next(error);

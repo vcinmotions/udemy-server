@@ -343,13 +343,57 @@ async function markLessonComplete(req, res, next) {
       },
     });
 
+    // after enrollment update
+
+    let certificate = null;
+    let certificateGenerated = false;
+
+    if (progress === 100) {
+      const existingCertificate = await prisma.certificate.findFirst({
+        where: {
+          studentId: req.user.id,
+          courseId,
+        },
+      });
+
+      if (!existingCertificate) {
+        const certificateNo =
+        `CERT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        
+        certificate = await prisma.certificate.create({
+          data: {
+            certificateNo: certificateNo,
+            studentId: req.user.id,
+            courseId,
+          },
+        });
+
+        certificateGenerated = true;
+      } else {
+        certificate = existingCertificate;
+      }
+    }
+
     return successResponse(res, {
-      message: 'Lesson completed',
+      message:
+        progress === 100
+          ? 'Course completed successfully'
+          : 'Lesson completed',
       data: {
         progress,
         enrollment,
+        certificate,
+        certificateGenerated,
       },
     });
+
+    // return successResponse(res, {
+    //   message: 'Lesson completed',
+    //   data: {
+    //     progress,
+    //     enrollment,
+    //   },
+    // });
   } catch (error) {
     next(error);
   }
