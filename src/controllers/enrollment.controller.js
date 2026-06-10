@@ -251,6 +251,16 @@ async function submitQuizAttempt(req, res, next) {
         studentPointsEarned += question.points;
       }
 
+      console.log("Student Answer:", studentSelectedText);
+
+      console.log(
+        "Correct Options:",
+        correctOptions.map(o => ({
+          id: o.id,
+          text: o.text
+        }))
+      );
+
       // Map matching option IDs if present to fit schema footprint
       const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
 
