@@ -198,6 +198,47 @@ async function getQuizByLessonForStudent(req, res, next) {
   }
 }
 
+async function getAssignmentForStudent(req, res, next) {
+  try {
+    const { assignmentId } = req.params;
+    const studentId = req.user.id;
+
+    const assignment = await prisma.assignment.findUnique({
+      where: {
+        id: assignmentId,
+      },
+      include: {
+        submissions: {
+          where: {
+            studentId,
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      return errorResponse(res, {
+        statusCode: 404,
+        message: 'Assignment not found.',
+      });
+    }
+
+    return successResponse(res, {
+      data: {
+        assignment,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /**
  * Submit Quiz Attempt & Evaluate Grades Atomically
  */
@@ -694,4 +735,4 @@ async function checkEnrollment(req, res, next) {
   }
 }
 
-module.exports = { enrollCourse, submitAssignment, submitQuizAttempt, getMyEnrollments, getQuizByLessonForStudent, markLessonComplete, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };
+module.exports = { enrollCourse, submitAssignment, getAssignmentForStudent, submitQuizAttempt, getMyEnrollments, getQuizByLessonForStudent, markLessonComplete, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };

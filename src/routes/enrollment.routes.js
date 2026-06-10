@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { enrollCourse, getMyEnrollments, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse, markLessonComplete, submitAssignment, submitQuizAttempt, getQuizByLessonForStudent } = require('../controllers/enrollment.controller');
+const { enrollCourse, getMyEnrollments, updateProgress, checkEnrollment, enrollCourseBypass, getAssignmentForStudent, getLearningCourse, markLessonComplete, submitAssignment, submitQuizAttempt, getQuizByLessonForStudent } = require('../controllers/enrollment.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 // All enrollment routes require login
@@ -15,6 +15,7 @@ router.get('/learn/:id', getLearningCourse);
 
 // Student Quiz Submission Endpoint
 router.get('/quizzes/:quizId', authorize('STUDENT'), getQuizByLessonForStudent);
+router.get('/assignments/:assignmentId', authorize('STUDENT'), getAssignmentForStudent);
 router.post('/quizzes/:quizId/submit', authorize('STUDENT'), submitQuizAttempt);
 
 // Student Assignment Submission Endpoint
