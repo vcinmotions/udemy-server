@@ -154,6 +154,220 @@ async function getMyEnrollments(req, res, next) {
     next(error);
   }
 }
+async function getQuizByLessonForStudent(req, res, next) {
+  try {
+    const { quizId } = req.params;
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: { 
+            options: true 
+          }
+        }
+      }
+    });
+
+    if (!quiz) {
+      return errorResponse(res, { statusCode: 404, message: 'No quiz found for this lesson.' });
+    }
+
+    // Format the quiz to hide answers before sending it to the student
+    const studentQuiz = {
+      ...quiz,
+      questions: quiz.questions.map(question => {
+        // 1. Remove correctOptionId if it's stored on the question level
+        const { correctOptionId, ...questionWithoutAnswer } = question;
+
+        return {
+          ...questionWithoutAnswer,
+          // 2. Remove isCorrect from each option if it's stored on the option level
+          options: question.options.map(option => {
+            const { isCorrect, ...optionWithoutAnswer } = option;
+            return optionWithoutAnswer;
+          })
+        };
+      })
+    };
+
+    return successResponse(res, { data: { quiz: studentQuiz } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Submit Quiz Attempt & Evaluate Grades Atomically
+ */
+async function submitQuizAttempt(req, res, next) {
+  try {
+    const { quizId } = req.params;
+    const { answers, lessonId } = req.body; // answers is an object mapping: { [questionId]: optionText }
+    const studentId = req.user.id;
+
+    // 1. Fetch Quiz along with structural solution metrics
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          include: { options: true }
+        }
+      }
+    });
+
+    if (!quiz) {
+      return errorResponse(res, { statusCode: 404, message: 'Target evaluation quiz structure missing.' });
+    }
+
+    // Optional Check: Enforce max attempts rule block if configured
+    if (quiz.maxAttempts) {
+      const existingAttemptsCount = await prisma.quizAttempt.count({
+        where: { quizId, studentId }
+      });
+      if (existingAttemptsCount >= quiz.maxAttempts) {
+        return errorResponse(res, { statusCode: 403, message: 'Maximum configuration attempt profiles exhausted for this module.' });
+      }
+    }
+
+    let totalPointsAllocated = 0;
+    let studentPointsEarned = 0;
+    const recordsToCreate = [];
+
+    // 2. Loop evaluate parameters against truth state values
+    for (const question of quiz.questions) {
+      totalPointsAllocated += question.points;
+      
+      const studentSelectedText = answers[question.id];
+      const correctOptions = question.options.filter(o => o.isCorrect);
+      
+      // Determine if text string coordinates align with known answers
+      const isCorrect = correctOptions.some(opt => opt.text === studentSelectedText);
+      
+      if (isCorrect) {
+        studentPointsEarned += question.points;
+      }
+
+      // Map matching option IDs if present to fit schema footprint
+      const selectedOptionMatch = question.options.find(opt => opt.text === studentSelectedText);
+
+      recordsToCreate.push({
+        questionId: question.id,
+        questionText: question.question,
+        selectedOptionIds: selectedOptionMatch ? [selectedOptionMatch.id] : [],
+        isCorrect
+      });
+    }
+
+    // Calculate passing metric properties
+    const scorePercentage = totalPointsAllocated > 0 
+      ? Math.round((studentPointsEarned / totalPointsAllocated) * 100) 
+      : 0;
+    const passed = scorePercentage >= quiz.passingScore;
+
+    // 3. Write attempt payload tracking down to data storage via transaction
+    const attempt = await prisma.$transaction(async (tx) => {
+      const newAttempt = await tx.quizAttempt.create({
+        data: {
+          quizId,
+          studentId,
+          score: scorePercentage,
+          percentage: scorePercentage,
+          passed,
+          completedAt: new Date(),
+          answers: {
+            create: recordsToCreate
+          }
+        },
+        include: { answers: true }
+      });
+
+      // 4. Update core lesson infrastructure loop progress upon passing
+      if (passed && lessonId) {
+        await tx.lessonProgress.upsert({
+          where: {
+            studentId_lessonId: { studentId, lessonId }
+          },
+          update: {
+            completed: true,
+            completedAt: new Date()
+          },
+          create: {
+            studentId,
+            lessonId,
+            completed: true,
+            completedAt: new Date()
+          }
+        });
+      }
+
+      return newAttempt;
+    });
+
+    return successResponse(res, {
+      message: 'Quiz grading operations finalized.',
+      data: { attempt }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Create or Update Student Assignment Submission Parameters
+ */
+async function submitAssignment(req, res, next) {
+  try {
+    const { lessonId } = req.params;
+    const { answerText, files } = req.body; 
+    const studentId = req.user.id;
+
+    // Verify the target parent assignment context exists
+    const assignment = await prisma.assignment.findUnique({
+      where: { lessonId }
+    });
+
+    if (!assignment) {
+      return errorResponse(res, { statusCode: 404, message: 'No target assignment compiled for this lesson sequence node.' });
+    }
+
+    // Check optional deadline properties configuration locks
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+      return errorResponse(res, { statusCode: 400, message: 'The submission window for this assignment has closed.' });
+    }
+
+    // Upsert payload to allow students to overwrite or submit fresh data elements
+    const submission = await prisma.assignmentSubmission.upsert({
+      where: {
+        assignmentId_studentId: {
+          assignmentId: assignment.id,
+          studentId
+        }
+      },
+      update: {
+        answerText,
+        files: files || null,
+        status: 'SUBMITTED',
+        submittedAt: new Date()
+      },
+      create: {
+        assignmentId: assignment.id,
+        studentId,
+        answerText,
+        files: files || null,
+        status: 'SUBMITTED'
+      }
+    });
+
+    return successResponse(res, {
+      message: 'Assignment metadata deliverables compiled safely.',
+      data: { submission }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 async function getLearningCourse(
   req,
@@ -447,4 +661,4 @@ async function checkEnrollment(req, res, next) {
   }
 }
 
-module.exports = { enrollCourse, getMyEnrollments, markLessonComplete, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };
+module.exports = { enrollCourse, submitAssignment, submitQuizAttempt, getMyEnrollments, getQuizByLessonForStudent, markLessonComplete, updateProgress, checkEnrollment, enrollCourseBypass, getLearningCourse };
