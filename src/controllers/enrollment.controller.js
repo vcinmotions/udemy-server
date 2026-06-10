@@ -194,30 +194,53 @@ async function getLearningCourse(
               },
 
               sections: {
+                orderBy: {
+                  order: 'asc',
+                },
                 include: {
                   lessons: {
+                    orderBy: {
+                      order: 'asc', // Essential for rendering the curriculum sequentially
+                    },
                     include: {
-                      progress : {
+                      progress: {
                         where: {
                           studentId: req.user.id,
                         },
                       },
+                      // ─── UPDATED: FETCH QUIZZES + ATTEMPTS BY THIS STUDENT ───
                       quiz: {
                         include: {
+                          attempts: {
+                            where: {
+                              studentId: req.user.id,
+                            },
+                            orderBy: {
+                              createdAt: 'desc', // Gets newest attempt data first
+                            },
+                          },
                           questions: {
+                            orderBy: {
+                              order: 'asc',
+                            },
                             include: {
                               options: true,
                             },
                           },
                         },
-                        assignment: true,
-                      }
+                      },
+                      // ─── UPDATED: FETCH ASSIGNMENTS + SUBMISSIONS BY THIS STUDENT ───
+                      assignment: {
+                        include: {
+                          submissions: {
+                            where: {
+                              studentId: req.user.id,
+                            },
+                          },
+                        },
+                      },
                     },
                   },
-                },
-
-                orderBy: {
-                  order: 'asc',
                 },
               },
             },
