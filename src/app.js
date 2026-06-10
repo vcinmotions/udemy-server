@@ -18,6 +18,7 @@ const categoryRoutes = require('./routes/category.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const publicRoutes = require('./routes/instructor.routes');
 const certificateRoutes = require('./routes/certificate.routes');
+const courseQuizAssignmentRoutes = require('./routes/quizAssignment.routes');
 
 const app = express();
 
@@ -92,6 +93,8 @@ app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/payments`, paymentRoutes);
 app.use(`${API_PREFIX}/public`, publicRoutes);
 app.use(`${API_PREFIX}/certificates`, certificateRoutes);
+app.use(`${API_PREFIX}/quizzes`, courseQuizAssignmentRoutes);
+app.use(`${API_PREFIX}/assignments`, courseQuizAssignmentRoutes);
 
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
