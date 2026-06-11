@@ -26,6 +26,45 @@ const COURSE_FULL_INCLUDE = {
     },
   },
 };
+// ─── Shared Include ───────────────────────────────────────────────────────────
+const PROTECTED_COURSE_FULL_INCLUDE = {
+  instructor: {
+    select: { id: true, name: true, avatar: true, headline: true, bio: true },
+  },
+  category: { select: { id: true, name: true, slug: true } },
+  subcategory: { select: { id: true, name: true, slug: true } },
+  whatYouWillLearn: { orderBy: { order: 'asc' } },
+  requirements: { orderBy: { order: 'asc' } },
+  tags: { include: { tag: true } },
+  sections: {
+    orderBy: { order: 'asc' },
+    include: {
+      lessons: {
+        orderBy: { order: 'asc' },
+        include: { 
+          assignment: true,
+          quiz: {
+            include: {
+              questions: {
+                orderBy: { order: 'asc' },
+                include: {
+                  options: true // Required for your React Native option mapping loop
+                }
+              }
+            }
+          }
+        },
+      },
+    },
+  },
+  reviews: {
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    include: {
+      author: { select: { id: true, name: true, avatar: true } },
+    },
+  },
+};
 
 const COURSE_LIST_INCLUDE = {
   instructor: { select: { id: true, name: true, avatar: true, headline: true } },
@@ -91,8 +130,8 @@ function protectedShapeCourse(course) {
         content: l.content,
         videoUrl: l.videoUrl,
         order: l.order,
-        quiz: l.quiz, 
-        assignment: l.assignment
+        quiz: l.quiz || null, 
+        assignment: l.assignment || null
       })),
     })) ?? [],
     reviews: course.reviews?.map((r) => ({
@@ -501,7 +540,7 @@ async function getProtectedCourseById(req, res, next) {
 
     const course = await prisma.course.findFirst({
       where: { id },
-      include: COURSE_FULL_INCLUDE,
+      include: PROTECTED_COURSE_FULL_INCLUDE,
     });
 
     if (!course) {
