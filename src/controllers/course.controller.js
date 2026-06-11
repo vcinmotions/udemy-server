@@ -91,6 +91,8 @@ function protectedShapeCourse(course) {
         content: l.content,
         videoUrl: l.videoUrl,
         order: l.order,
+        quiz: l.quiz, 
+        assignment: l.assignment
       })),
     })) ?? [],
     reviews: course.reviews?.map((r) => ({
